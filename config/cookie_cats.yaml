@@ -1,0 +1,79 @@
+# Case Study 1 — Cookie Cats (SPEC.md §5.1)
+#
+# A mobile puzzle game moved its first progression gate from level 30 to level 40.
+# Players were randomised at install. Verified against the real file in Phase 0:
+# 90,189 rows, schema exactly as specced. See docs/decisions.md D-07.
+
+experiment: cookie_cats_gate_move
+description: >-
+  Moving the first progression gate from level 30 (gate_30) to level 40 (gate_40)
+  in the mobile game Cookie Cats. Randomised at install; 90,189 players.
+
+source:
+  adapter: cookie_cats
+  path: data/cookie_cats.csv
+
+variants: [gate_30, gate_40]
+control: gate_30
+
+# The experiment was designed as an even split. That is a real design intent, not a
+# number read off the data, so the SRM check here can genuinely fail — and it very
+# nearly does: observed 49.56/50.44, chi2 = 6.9024, p = 0.0086. Warns, does not block.
+intended_split:
+  gate_30: 0.5
+  gate_40: 0.5
+intended_split_source: stated
+
+# The smallest relative effect worth acting on, declared BEFORE looking at results so
+# the MDE comparison in §7.4 means something. 1% relative on day-7 retention is roughly
+# 0.19pp here — a defensible floor for a change that costs engineering time to ship and
+# affects every new player. Stated up front so it cannot be tuned to fit the answer.
+practical_effect: 0.01
+
+metrics:
+  - name: retention
+    label: Retention
+    role: primary
+    type: binary_rate
+    direction: increase
+    horizons:
+      - name: day_1
+        label: Day-1 retention
+        event_type: return_d1
+        mode: precomputed
+      - name: day_7
+        label: Day-7 retention
+        event_type: return_d7
+        mode: precomputed
+
+  - name: game_rounds
+    label: Game rounds played (14d)
+    role: guardrail
+    type: mean_value
+    direction: increase
+    note: >-
+      Post-treatment, so it is used ONLY as an outcome — never for segmentation and never
+      as a CUPED covariate (SPEC.md §5.2). See the adapter docstring for why the same
+      column is legitimate on one side of the analysis and disqualifying on the other.
+    horizons:
+      - name: day_14
+        label: Mean rounds per player (14d)
+        event_type: game_rounds
+        mode: precomputed
+
+# Empty, and that is a finding rather than an omission. After the id, the arm label, the
+# two outcomes and the post-treatment round count, nothing in this file was known before
+# randomisation. Segmentation and CUPED are therefore impossible here — the reason
+# Case Study 2 exists (docs/dataset_selection.md).
+covariates: []
+
+notes:
+  decision_subtitle: keep the Cookie Cats gate at level 30
+  horizons: >-
+    Both retention horizons are precomputed booleans, not computed windows. The file has
+    no timestamp column, so this system did not measure the horizons — it is reading
+    columns someone else resolved.
+  peeking: >-
+    No time dimension means a true sequential analysis is impossible on this dataset, so
+    the peeking work in SPEC.md §7.6 is a simulation calibrated to this experiment's
+    sample size and baseline rate, and is labelled as such.

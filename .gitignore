@@ -1,0 +1,17 @@
+# Datasets are never committed (SPEC.md §11) — they are downloaded.
+# The fetch script and its checksums ARE committed, so a reader can confirm they have
+# the same bytes this analysis was run on.
+data/*
+!data/download.sh
+!data/checksums.sha256
+
+# Generated outputs — rebuilt by `make all`, not tracked.
+*.duckdb
+*.duckdb.wal
+
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ipynb_checkpoints/
+.DS_Store

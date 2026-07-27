@@ -89,7 +89,7 @@ Reported whether or not they are convenient — a change that improves the prima
 
 | Horizon | Control | Treatment | Difference | 95% CI (relative) | p | Readable? |
 |---|---|---|---|---|---|---|
-| Mean rounds per player (14d) | 52.46 | 51.30 | -2.21% | -7.43% to +1.91% | 0.3759 | **no — inside noise** |
+| Mean rounds per player (14d) | 52.46 | 51.30 | -2.21% | -7.38% to +1.91% | 0.3759 | **no — inside noise** |
 
 > Post-treatment, so it is used ONLY as an outcome — never for segmentation and never as a CUPED covariate (SPEC.md §5.2). See the adapter docstring for why the same column is legitimate on one side of the analysis and disqualifying on the other.
 
@@ -131,7 +131,7 @@ Three things it does that the notebook version of this analysis would not:
 2. **Diagnostics and power run before any result exists.** Enforced by construction in `readout/run.py` rather than by remembering to do things in the right order.
 3. **It states what it cannot support.** The segmentation analysis was declined on methodological grounds and the reasoning is written down, rather than the analysis being quietly omitted.
 
-The same command runs the second case study — a 14M-row advertising experiment — against a different config, with no change to the contract. [`docs/dataset_selection.md`](docs/dataset_selection.md) records how that dataset was chosen and why three others were rejected.
+**Status.** Phases 0–4 are complete: the system runs end to end on Cookie Cats and everything above is generated from it. A second case study — the 13.9M-row Criteo uplift experiment, which is the one with genuine pre-treatment covariates and therefore the one that can carry segmentation and CUPED — is selected and specified but **not yet run**. The claim that the contract generalises unchanged is not proven until it does, and this README will not make it before then. [`docs/dataset_selection.md`](docs/dataset_selection.md) records how that dataset was chosen and why three others were rejected on methodological grounds.
 
 ## Reproducing this
 

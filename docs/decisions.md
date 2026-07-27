@@ -130,6 +130,56 @@ The decisions are opposite; the point estimates are not. Every downstream surfac
 phrasing. `SPEC.md` §13's resume bullet 2 already says "short-horizon metrics scored as
 neutral," which is consistent with the data and may be used as written.
 
+## D-09 — Power is computed per horizon, not once per experiment **[new]**
+
+*Phase 3, forced by the Cookie Cats readout.*
+
+`SPEC.md` §7.4 asks for the MDE to be computed from sample size and baseline rate. The
+first implementation took the baseline from whichever horizon was listed first in the
+config, and reported one MDE for the experiment. That is wrong whenever horizons have
+different baselines, and here they differ by a factor of more than two:
+
+| Horizon | Baseline | MDE (relative) | Observed effect | Detectable? |
+|---|---|---|---|---|
+| Day 1 | 44.82% | 2.07% | 1.32% | no |
+| Day 7 | 19.02% | 3.85% | 4.31% | yes, barely |
+
+The MDE is now computed per horizon, and this table is the clearest statement of what
+actually happened in this experiment. The day-1 read did not fail to find the effect
+because the effect was absent — it failed because **an effect that size was below what
+day 1 could resolve at this sample size**. The day-7 read found it with very little room
+to spare.
+
+That reframes the headline from "the metric changed between horizons" to something
+sharper: the short horizon was never capable of answering the question, and reporting it
+as "no significant difference" gives a team false confidence rather than no information.
+
+Worth stating plainly because it cuts against the project's own result: **neither horizon
+could reliably detect the 1% effect declared worth acting on.** The harm was found because
+it happened to be large. A real but smaller harm would have passed silently through both
+reads. That is a criticism of how the experiment was sized, not of what it found, and the
+memo says so rather than leaving it for an interviewer to notice.
+
+## D-10 — Zero-activity is non-diagnostic when every event is an outcome **[new]**
+
+*Phase 2, caught by a test that should have passed and didn't.*
+
+The zero-activity check (`SPEC.md` §7.2) looks for units that never showed up at all —
+evidence of differential logging, or of the treatment driving units away before they could
+act. The first implementation flagged the clean synthetic fixture as a WARN, which was the
+test doing its job.
+
+The cause is structural. If the only event type in the data is the outcome being measured,
+then "this unit produced no events" means exactly "this unit did not convert" — so any
+genuine treatment effect makes the arms differ on zero-activity, and the check fires on
+every healthy experiment with a real lift. It cannot distinguish the signal it is looking
+for from the signal it is supposed to be independent of.
+
+The check now requires an activity event that is **not** referenced by any configured
+metric, and reports NOT_APPLICABLE when there is none. Both real datasets land there:
+Cookie Cats for a second reason as well — its adapter emits `game_rounds` for every player,
+so zero-activity is 0 by construction rather than by observation.
+
 ## D-08 — Non-informative diagnostics report as such, never as passes **[new]**
 
 *Phase 0, forced by Criteo's missing unit identifier.*

@@ -314,10 +314,14 @@ def _how_this_was_built(readout) -> list[str]:
         "methodological grounds and the reasoning is written down, rather than the analysis "
         "being quietly omitted.",
         "",
-        "The same command runs the second case study — a 14M-row advertising experiment — "
-        "against a different config, with no change to the contract. "
+        "**Status.** Phases 0–4 are complete: the system runs end to end on Cookie Cats and "
+        "everything above is generated from it. A second case study — the 13.9M-row Criteo "
+        "uplift experiment, which is the one with genuine pre-treatment covariates and "
+        "therefore the one that can carry segmentation and CUPED — is selected and specified "
+        "but **not yet run**. The claim that the contract generalises unchanged is not proven "
+        "until it does, and this README will not make it before then. "
         "[`docs/dataset_selection.md`](docs/dataset_selection.md) records how that dataset was "
-        "chosen and why three others were rejected.",
+        "chosen and why three others were rejected on methodological grounds.",
     ]
 
 

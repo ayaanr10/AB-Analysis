@@ -1,0 +1,94 @@
+# Case Study 2 — Criteo Uplift Prediction Dataset (SPEC.md §5.3, resolved in Phase 0)
+#
+# Diemert, Betlei, Renaudin & Amini (AdKDD 2018). CC BY-NC-SA 4.0.
+# 13,979,592 rows, verified in Phase 0. Selected over three rejected candidates because
+# it is the only one with unit-level pre-treatment covariates — see
+# docs/dataset_selection.md for the evaluation and the caveats accepted.
+#
+# This config exists to test a claim: that a second, very different dataset runs through
+# the contract with no change to it. The only things that differ from cookie_cats.yaml
+# are the adapter, the arms, the metrics and the covariates. No SQL and no analysis code
+# is dataset-specific.
+
+experiment: criteo_uplift
+description: >-
+  A large-scale advertising incrementality test: 13,979,592 users randomised into a
+  treated arm that could receive advertising and a holdout that could not. Outcomes are
+  site visits and conversions.
+
+source:
+  adapter: criteo
+  path: data/criteo-research-uplift-v2.1.csv.gz
+
+variants: [holdout, treated]
+control: holdout
+
+# NOT published. 85/15 is read off the observed data, which makes the SRM check circular —
+# it is testing the counts against a ratio derived from those same counts and cannot
+# reject. Declared 'inferred' so the gate reports it as NOT_APPLICABLE rather than as a
+# pass (docs/decisions.md D-08). Cookie Cats, where 50/50 is genuine design intent, is
+# where the SRM check does real work.
+intended_split:
+  holdout: 0.15
+  treated: 0.85
+intended_split_source: inferred
+
+# Advertising incrementality is judged on small relative movements at enormous scale;
+# 1% relative on visit rate is a defensible floor. Declared before looking at the result.
+practical_effect: 0.01
+
+metrics:
+  - name: visit
+    label: Site visit rate
+    role: primary
+    type: binary_rate
+    direction: increase
+    horizons:
+      - name: campaign
+        label: Visit rate (campaign period)
+        event_type: visit
+        mode: precomputed
+
+  - name: conversion
+    label: Conversion rate
+    role: guardrail
+    type: binary_rate
+    direction: increase
+    horizons:
+      - name: campaign
+        label: Conversion rate (campaign period)
+        event_type: conversion
+        mode: precomputed
+
+  - name: exposure
+    label: Exposure rate
+    role: guardrail
+    type: binary_rate
+    direction: increase
+    note: >-
+      Post-treatment by construction — exposure=1 occurs only under treatment=1, because it
+      records the ad actually being delivered. Reported as an outcome to show delivery
+      volume, and never used as a covariate, for segmentation, or in CUPED. Same error
+      class as sum_gamerounds in Case Study 1.
+    horizons:
+      - name: campaign
+        label: Share actually served an ad
+        event_type: exposure
+        mode: precomputed
+
+# The reason this dataset was selected. Twelve numeric covariates, balanced across arms
+# (worst |SMD| = 0.0488) and correlated with the outcome (f9 at +0.495 with visit), which
+# is exactly the profile CUPED needs. Their pre-treatment status rests on Criteo's
+# documentation plus a balance check that failed to falsify it — it is not verifiable from
+# the file, because the values were randomly projected before release.
+covariates: [f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11]
+
+notes:
+  decision_subtitle: advertising drove a large, real increase in site visits
+  covariates: >-
+    Anonymised and randomly projected, so segmentation on them demonstrates method and
+    deliberately claims no product insight. "Uplift is higher in the top quartile of f9"
+    is not an actionable sentence, and the write-up does not pretend otherwise.
+  identity: >-
+    No unit identifier exists in the source; unit_id is the row ordinal. Duplicate and
+    cross-contamination checks therefore cannot fail and are reported as non-diagnostic.

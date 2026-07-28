@@ -6,7 +6,7 @@
 
 **The experiment:** Moving the first progression gate from level 30 (gate_30) to level 40 (gate_40) in the mobile game Cookie Cats. Randomised at install; 90,189 players.
 
-**The finding.** At day-7 retention, the change made things worse by 4.3% — a difference too large and too consistent to be chance (p = 0.0016).
+**The finding.** At day-7 retention, the change made things worse by 4.3%, a difference too large and too consistent to be chance (p = 0.0016).
 
 Every horizon points the same way, but only Day-7 retention is distinguishable from noise; Day-1 retention is not. The point estimates agree — what changes with the horizon is whether the effect is detectable at all, and therefore what a team reading that horizon would decide.
 
@@ -89,7 +89,7 @@ Reported whether or not they are convenient — a change that improves the prima
 
 | Horizon | Control | Treatment | Difference | 95% CI (relative) | p | Readable? |
 |---|---|---|---|---|---|---|
-| Mean rounds per player (14d) | 52.46 | 51.30 | -2.21% | -7.38% to +1.91% | 0.3759 | **no — inside noise** |
+| Mean rounds per player (14d) | 52.46 | 51.30 | -2.21% | -7.33% to +1.98% | 0.3759 | **no — inside noise** |
 
 > Post-treatment, so it is used ONLY as an outcome — never for segmentation and never as a CUPED covariate (SPEC.md §5.2). See the adapter docstring for why the same column is legitimate on one side of the analysis and disqualifying on the other.
 
@@ -131,7 +131,13 @@ Three things it does that the notebook version of this analysis would not:
 2. **Diagnostics and power run before any result exists.** Enforced by construction in `readout/run.py` rather than by remembering to do things in the right order.
 3. **It states what it cannot support.** The segmentation analysis was declined on methodological grounds and the reasoning is written down, rather than the analysis being quietly omitted.
 
-**Status.** Phases 0–4 are complete: the system runs end to end on Cookie Cats and everything above is generated from it. A second case study — the 13.9M-row Criteo uplift experiment, which is the one with genuine pre-treatment covariates and therefore the one that can carry segmentation and CUPED — is selected and specified but **not yet run**. The claim that the contract generalises unchanged is not proven until it does, and this README will not make it before then. [`docs/dataset_selection.md`](docs/dataset_selection.md) records how that dataset was chosen and why three others were rejected on methodological grounds.
+**It has been run on a second experiment.** The Criteo uplift dataset, 13,979,592 users, went through the contract with no change to any file in `sql/`, `analysis/` or `readout/` — one new adapter and one new config, which is what the design says should be all that is needed. Same command, different config:
+
+```bash
+python -m readout.cli readout --config config/criteo.yaml --database criteo.duckdb
+```
+
+That case study is where segmentation and CUPED live, since Cookie Cats has no covariates to support them. It also produced the most useful finding in the repo: a covariate that passed the balance check at |SMD| = 0.024 had still inflated the headline effect by a quarter of its size, which CUPED corrected. Full write-up in [`docs/case_study_2.md`](docs/case_study_2.md); the dataset evaluation and the three rejections are in [`docs/dataset_selection.md`](docs/dataset_selection.md).
 
 ## Reproducing this
 

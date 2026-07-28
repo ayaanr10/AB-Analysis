@@ -76,12 +76,20 @@ class CriteoAdapter(Adapter):
     synthesises_unit_ids = True
 
     def register_source(self, con: duckdb.DuckDBPyConnection, path: str) -> None:
-        # row_number() is materialised once here so every downstream SELECT agrees about
-        # which row is which unit. Recomputing it per query would risk two different
-        # orderings silently disagreeing about identity.
+        # A TABLE, not a view, and for two separate reasons.
+        #
+        # Correctness: row_number() has to be assigned once. As a view it would be
+        # recomputed on every scan, and nothing guarantees two scans of a 14M-row CSV
+        # produce the same order — so unit 7 in `assignments` could be a different row
+        # than unit 7 in `events`. That is a silent, total corruption of the join.
+        #
+        # Speed: the source is a 311 MB gzip. A view re-decompresses it on every scan,
+        # and the pipeline scans it seven times (row count, schema check, assignments,
+        # three event branches, covariates). Materialising once turns roughly seven
+        # decompressions into one.
         con.execute(
             f"""
-            CREATE OR REPLACE VIEW {SOURCE_VIEW} AS
+            CREATE OR REPLACE TABLE {SOURCE_VIEW} AS
             SELECT row_number() OVER () AS _row_id, *
             FROM read_csv_auto({sql_literal(path)}, header = true)
             """

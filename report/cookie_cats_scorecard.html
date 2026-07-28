@@ -1,0 +1,61 @@
+<!doctype html><html lang='en'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>Scorecard &mdash; cookie_cats_gate_move</title><style>
+:root {
+  --bg:#fbfbfa; --fg:#1a1a19; --muted:#6b6b68; --line:#e2e2de; --card:#fff;
+  --pass:#2d7a4f; --warn:#a86a12; --block:#b3261e; --na:#8a8a86; --accent:#1f4e79;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg:#161614; --fg:#eeeeea; --muted:#a3a39e; --line:#33332f; --card:#1f1f1c;
+          --pass:#6ec18f; --warn:#e0a94a; --block:#f2857c; --na:#8a8a86; --accent:#8ab6e0; }
+}
+* { box-sizing:border-box; }
+body { margin:0; padding:2rem 1.25rem 4rem; background:var(--bg); color:var(--fg);
+  font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,sans-serif; }
+main { max-width:60rem; margin:0 auto; }
+h1 { font-size:1.5rem; margin:0 0 .25rem; letter-spacing:-.01em; }
+h2 { font-size:.78rem; text-transform:uppercase; letter-spacing:.09em; color:var(--muted);
+  margin:2.25rem 0 .7rem; font-weight:600; }
+.sub { color:var(--muted); margin:0 0 1.75rem; }
+.card { background:var(--card); border:1px solid var(--line); border-radius:9px;
+  padding:1.1rem 1.25rem; margin-bottom:.7rem; }
+.verdict { border-left:5px solid var(--accent); }
+.verdict.blocked { border-left-color:var(--block); }
+.verdict h1 { color:var(--accent); }
+.verdict.blocked h1 { color:var(--block); }
+table { width:100%; border-collapse:collapse; font-variant-numeric:tabular-nums; }
+th,td { text-align:right; padding:.5rem .6rem; border-bottom:1px solid var(--line); }
+th:first-child, td:first-child { text-align:left; }
+th { font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; color:var(--muted);
+  font-weight:600; }
+tbody tr:last-child td { border-bottom:none; }
+.scroll { overflow-x:auto; }
+.tag { display:inline-block; font-size:.68rem; font-weight:700; letter-spacing:.05em;
+  padding:.16rem .45rem; border-radius:4px; border:1px solid currentColor; }
+.pass{color:var(--pass)} .warn{color:var(--warn)} .block{color:var(--block)} .na{color:var(--na)}
+.diag { display:grid; grid-template-columns:auto 1fr; gap:.5rem .9rem; align-items:baseline; }
+.diag .txt { color:var(--muted); font-size:.9rem; }
+.banner { border-left:4px solid var(--warn); background:color-mix(in srgb,var(--warn) 8%,transparent);
+  padding:.8rem 1rem; border-radius:0 7px 7px 0; margin-bottom:.7rem; font-size:.92rem; }
+.sig { color:var(--pass); font-weight:600; }
+.nosig { color:var(--muted); }
+.controls { display:flex; gap:.4rem; flex-wrap:wrap; margin-bottom:.7rem; }
+.controls button { font:inherit; font-size:.85rem; padding:.35rem .8rem; cursor:pointer;
+  background:var(--card); color:var(--fg); border:1px solid var(--line); border-radius:6px; }
+.controls button[aria-pressed="true"] { border-color:var(--accent); color:var(--accent);
+  font-weight:600; }
+footer { color:var(--muted); font-size:.82rem; margin-top:2.5rem; padding-top:1rem;
+  border-top:1px solid var(--line); }
+code { font-size:.85em; background:color-mix(in srgb,var(--fg) 7%,transparent);
+  padding:.1rem .3rem; border-radius:3px; }
+</style></head><body><main><section class="card verdict"><h1>Do not ship</h1><p class="sub">Moving the first progression gate from level 30 (gate_30) to level 40 (gate_40) in the mobile game Cookie Cats. Randomised at install; 90,189 players.</p><p>At day-7 retention, the change made things worse by 4.3%, a difference too large and too consistent to be chance (p = 0.0016).</p></section><h2>Validity diagnostics</h2><div class="card"><div class="diag"><span class="tag warn">WARN</span><span><strong>Sample ratio mismatch</strong><br><span class="txt">observed gate_30 49.56%, gate_40 50.44% vs intended gate_30 50%, gate_40 50%, chi2=6.9024, p=0.008608</span></span><span class="tag pass">PASS</span><span><strong>Duplicate assignments</strong><br><span class="txt">every unit_id appears exactly once</span></span><span class="tag pass">PASS</span><span><strong>Cross-contamination</strong><br><span class="txt">every unit belongs to exactly one variant</span></span><span class="tag pass">PASS</span><span><strong>Orphan events</strong><br><span class="txt">every event belongs to an assigned unit</span></span><span class="tag na">n/a</span><span><strong>Zero-activity units</strong><br><span class="txt">every event type in this dataset is an outcome being measured</span></span><span class="tag na">n/a</span><span><strong>Pre-period balance</strong><br><span class="txt">no pre-treatment covariates exist in this dataset</span></span></div></div><h2>Power &mdash; shown before results</h2><div class='card scroll'><table><thead><tr><th>Horizon</th><th>Baseline</th><th>Smallest detectable effect</th><th>Worth acting on</th><th>Powered for that?</th></tr></thead><tbody><tr><td>Day-1 retention</td><td>44.82%</td><td>2.07% rel (+0.928% abs)</td><td>1.0%</td><td><span class="block">no</span></td></tr><tr><td>Day-7 retention</td><td>19.02%</td><td>3.85% rel (+0.732% abs)</td><td>1.0%</td><td><span class="block">no</span></td></tr></tbody></table></div><h2>Results</h2><div class="controls"><button data-horizon-filter="*" aria-pressed="true">All horizons</button><button data-horizon-filter="Day-1 retention" aria-pressed="false">Day-1 retention</button><button data-horizon-filter="Day-7 retention" aria-pressed="false">Day-7 retention</button><button data-horizon-filter="Mean rounds per player (14d)" aria-pressed="false">Mean rounds per player (14d)</button></div><div class="banner"><strong>Sample ratio mismatch.</strong> p = 0.0086 sits between the warn (0.05) and block (0.001) thresholds. The imbalance is unlikely to be chance and is reported next to every estimate, but it is small in magnitude and applies equally to every metric and horizon, so it cannot by itself reverse the sign of an effect.</div><div class="card scroll"><table><thead><tr><th>Metric</th><th>Control</th><th>Treatment</th><th>Effect</th><th>95% CI (relative)</th><th>p</th><th>Readable?</th></tr></thead><tbody><tr data-horizon="Day-1 retention"><td>Retention<br><span class='txt'>Day-1 retention</span></td><td>44.8188%</td><td>44.2283%</td><td>-1.32%</td><td>-2.75% to +0.13%</td><td>0.0744</td><td><span class="nosig">no</span></td></tr><tr data-horizon="Day-7 retention"><td>Retention<br><span class='txt'>Day-7 retention</span></td><td>19.0201%</td><td>18.2000%</td><td>-4.31%</td><td>-6.93% to -1.65%</td><td>0.0016</td><td><span class="sig">yes</span></td></tr><tr data-horizon="Mean rounds per player (14d)"><td>Game rounds played (14d) <span class="txt">(guardrail)</span><br><span class='txt'>Mean rounds per player (14d)</span></td><td>52.46</td><td>51.30</td><td>-2.21%</td><td>-7.33% to +1.98%</td><td>0.3759</td><td><span class="nosig">no</span></td></tr></tbody></table></div><h2>Segmentation and CUPED</h2><div class="card"><strong>Not possible on this dataset.</strong><br><span class="txt">No pre-treatment covariates exist, so there is nothing safe to split on and nothing to adjust with. Declined rather than approximated.</span></div><footer>Generated by <code>readout.cli html --config config/cookie_cats.yaml</code> on 2026-07-28 from 90,189 assignments and 147,123 events. Every value on this page comes from the same pipeline that produced the decision memo.</footer></main><script>
+document.querySelectorAll('[data-horizon-filter]').forEach(function (btn) {
+  btn.addEventListener('click', function () {
+    var want = btn.getAttribute('data-horizon-filter');
+    document.querySelectorAll('[data-horizon-filter]').forEach(function (b) {
+      b.setAttribute('aria-pressed', String(b === btn));
+    });
+    document.querySelectorAll('tr[data-horizon]').forEach(function (row) {
+      row.hidden = want !== '*' && row.getAttribute('data-horizon') !== want;
+    });
+  });
+});
+</script></body></html>

@@ -23,6 +23,18 @@ from .contract import materialise_config_variants
 SQL_DIR = Path(__file__).resolve().parent.parent / "sql"
 
 
+def format_relative(value: float | None) -> str:
+    """Render a relative effect, or say plainly that there isn't one.
+
+    A relative effect needs a non-zero baseline to divide by. Criteo's `exposure`
+    guardrail has a control rate of exactly 0 (an ad cannot be delivered to the holdout),
+    so the relative effect is undefined rather than large. Reporting "undefined, control
+    rate is 0" is the informative answer: a metric that is structurally zero in one arm is
+    a metric the treatment created, which is what makes it post-treatment.
+    """
+    return "undefined (control rate is 0)" if value is None else f"{value:+.2%}"
+
+
 @dataclass(frozen=True)
 class HorizonResult:
     metric_name: str
@@ -39,7 +51,7 @@ class HorizonResult:
     control_value: float
     treatment_value: float
     absolute_effect: float
-    relative_effect: float
+    relative_effect: float | None
     se_absolute: float
     p_value: float
     ci_absolute: BootstrapInterval
@@ -48,6 +60,10 @@ class HorizonResult:
     @property
     def is_significant(self) -> bool:
         return self.p_value < 0.05
+
+    @property
+    def relative_text(self) -> str:
+        return format_relative(self.relative_effect)
 
     @property
     def is_primary(self) -> bool:
@@ -170,7 +186,7 @@ def horizon_contrast(results, metric: Metric) -> str:
     if len(signs) > 1:
         return (
             "The horizons disagree in direction: "
-            + "; ".join(f"{r.horizon_label} {r.relative_effect:+.2%}" for r in rows)
+            + "; ".join(f"{r.horizon_label} {r.relative_text}" for r in rows)
             + ". The same experiment supports opposite conclusions depending on when it is read."
         )
     if significant and len(significant) < len(rows):

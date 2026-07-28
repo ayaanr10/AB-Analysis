@@ -70,12 +70,13 @@ def render_scorecard(readout) -> str:
         tag = "" if r.is_primary else "  (guardrail)"
         out.append(
             f"  {r.horizon_label[:24]:<26s}{fmt(r.control_value):>11s}"
-            f"{fmt(r.treatment_value):>12s}{r.relative_effect:>+10.2%}"
+            f"{fmt(r.treatment_value):>12s}{r.relative_text:>10s}"
             f"{r.p_value:>8.4f}{marker}{tag}"
         )
-        out.append(
-            f"  {'':<26s}{'95% CI':>11s} {r.ci_relative.low:+.2%} to {r.ci_relative.high:+.2%}"
-        )
+        if r.relative_effect is not None:
+            out.append(
+                f"  {'':<26s}{'95% CI':>11s} {r.ci_relative.low:+.2%} to {r.ci_relative.high:+.2%}"
+            )
 
     if readout.gate.warnings:
         out += ["", " WARNINGS (shown with the metrics, not beneath them)",

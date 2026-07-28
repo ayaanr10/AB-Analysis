@@ -180,6 +180,120 @@ metric, and reports NOT_APPLICABLE when there is none. Both real datasets land t
 Cookie Cats for a second reason as well — its adapter emits `game_rounds` for every player,
 so zero-activity is 0 by construction rather than by observation.
 
+## D-14 — A covariate can pass the balance check and still bias the estimate **[new]**
+
+*Phase 5, found by running CUPED on Criteo. The most useful thing this project turned up.*
+
+CUPED is supposed to shrink the confidence interval without moving the point estimate. On
+Criteo it moved it a lot:
+
+| | absolute | relative |
+|---|---|---|
+| Raw effect on visit rate | +0.010342 | +27.07% |
+| CUPED-adjusted effect | +0.007859 | +20.57% |
+
+A quarter of the headline effect disappeared. That looked like a bug, and it is not. The
+shift is exactly what the arithmetic predicts:
+
+```
+shift = -theta x (mean_X[treated] - mean_X[holdout])
+      = -0.014932 x (16.052589 - 15.886253)
+      = -2.4838e-03        observed: -2.48e-03
+```
+
+The treated arm happened to get users with slightly higher `f9`, `f9` positively predicts
+visiting, so part of the raw effect was never the treatment. CUPED removes it. The adjusted
+estimate is the better one.
+
+**Why this matters, and why it complicates D-04.** `f9`'s imbalance is |SMD| = 0.0240 —
+comfortably inside the 0.10 threshold, reported as PASS by this system's own balance check.
+So a covariate that the diagnostic correctly called balanced still inflated the headline
+effect by 24% of its own size. The p-value view of balance, which D-04 rejects, was pointing
+at something real.
+
+The resolution is not to switch back to p-values, and it is not to raise the SMD threshold:
+
+- **|SMD| < 0.10 is the right rule for *blocking*.** An experiment with this much imbalance
+  is still interpretable, and the decision here (advertising drove a large real increase) is
+  identical either way.
+- **But the right response to sub-threshold imbalance is to *adjust for it*, not to dismiss
+  it.** "Balanced enough not to block" and "balanced enough to ignore" are different claims,
+  and the balance check only establishes the first.
+
+So the general rule this project now holds: report the raw effect, report the
+covariate-adjusted effect, and treat a gap between them as information about the
+randomisation rather than as a problem with the adjustment. Where covariates exist, the
+adjusted estimate is the headline. Cookie Cats has no covariates, so its estimate cannot be
+adjusted and cannot be checked this way, which is worth knowing about it.
+
+The corollary for the CUPED test suite: asserting "CUPED must not move the estimate" is
+wrong. The correct assertion is that any movement equals `-theta x` the covariate imbalance,
+which is what `tests/test_segments.py` now checks, on both a balanced and a deliberately
+imbalanced fixture.
+
+## D-11 — Generated HTML scorecard rather than Tableau **[new]**
+
+*Phase 6. Resolves `SPEC.md` §12 Q3.*
+
+The scorecard is generated HTML (`readout/html.py`), produced by the same pipeline run that
+produces the memo, from the same `Readout` object.
+
+The deciding argument is the blocking rule. `SPEC.md` §7.3 requires that a BLOCK suppresses
+effect estimates in **every** output surface. In generated HTML that is one branch, sharing
+the gate check with every other surface, and `tests/test_gate.py` asserts it. In Tableau it
+would be a calculated field on an extract, which someone can unhide and which goes stale
+silently the moment the pipeline changes. A scorecard that can disagree with the analysis
+behind it is worse than no scorecard.
+
+**What this costs, stated because it is a real loss.** The argument for Tableau was a
+portfolio argument, not a technical one: it would add a second artifact to an existing
+Tableau Public profile, which has value for the job this project exists to do (`SPEC.md`
+§2). Nothing here recovers that. If the portfolio consideration is judged to outweigh the
+integrity argument, the fix is to add a Tableau workbook *alongside* this, reading the same
+DuckDB output, rather than replacing it.
+
+§7.9's "parameterized so either experiment loads without rebuilding the workbook" holds in
+the form this choice permits: one generator, any config, no edits. Nothing in `html.py`
+names a dataset, variant, metric or horizon.
+
+## D-12 — A metric with a zero control rate reports no relative effect **[new]**
+
+*Phase 5, found by running Criteo.*
+
+Criteo's `exposure` guardrail is 0% in the holdout arm, because an ad cannot be delivered to
+a holdout. The relative effect therefore divides by zero. The first version of the code
+crashed formatting it.
+
+`relative_effect` is now nullable and every surface renders
+`undefined (control rate is 0)`. Reporting it that way is more informative than either a
+crash or a suppressed row: a metric that is structurally zero in one arm is a metric the
+treatment *created*, which is the sharpest possible illustration of post-treatment. It also
+means the bootstrap's relative interval is undefined, which the interval reports rather than
+returning a silent NaN.
+
+This is the second dataset earning its place: the bug was always in the code, and only a
+dataset with a definitionally-zero arm would surface it.
+
+## D-13 — Segmentation on Criteo demonstrates method and claims no insight **[new]**
+
+*Phase 5. Bears on `SPEC.md` §7.8.*
+
+48 comparisons (12 covariates x 4 quartiles), Benjamini-Hochberg corrected across the whole
+family, with raw and adjusted p-values both reported and the count of tests stated. At
+α = 0.05 about two of the 48 would look significant on noise alone; not saying how many were
+examined is how subgroup analyses produce findings that never replicate.
+
+The results are deliberately **not** interpreted as a product finding. Criteo's covariates
+are randomly projected, so "uplift is higher in the top quartile of `f9`" is not actionable
+by anyone, including me. The same anonymisation that makes the dataset publishable destroys
+the narrative. Presenting anonymised quartile effects as a business recommendation would look
+more impressive and be less honest.
+
+One detail worth defending: quartile boundaries are computed over the pooled population
+rather than within each arm. Ranking within arm would make "top quartile" a different
+covariate range in treatment than in control, and the segments would no longer be comparable
+across the thing being compared.
+
 ## D-08 — Non-informative diagnostics report as such, never as passes **[new]**
 
 *Phase 0, forced by Criteo's missing unit identifier.*

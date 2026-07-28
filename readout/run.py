@@ -25,6 +25,7 @@ from .contract import LoadReport, load
 from .diagnostics import run_diagnostics
 from .gate import GateDecision, Status, evaluate
 from .metrics import HorizonResult, compute_metrics, horizon_contrast
+from .segments import SegmentationReport, render_segments, run_segments
 
 
 @dataclass(frozen=True)
@@ -52,6 +53,7 @@ class Readout:
     power: tuple[HorizonPower, ...] | None
     results: tuple[HorizonResult, ...] | None
     peeking: PeekingResult | None
+    segments: SegmentationReport | None = None
 
     def power_for(self, horizon_name: str) -> PowerResult | None:
         for hp in self.power or ():
@@ -112,11 +114,13 @@ class Readout:
             flag = "significant" if r.is_significant else "not distinguishable from noise"
             out.append(
                 f"  {r.horizon_label:<28s} {r.control_value:>9.4%} -> {r.treatment_value:>9.4%}"
-                f"  {r.relative_effect:+8.2%}  p={r.p_value:.4f}  ({flag})"
+                f"  {r.relative_text:>10s}  p={r.p_value:.4f}  ({flag})"
             )
-            out.append(
-                f"  {'':<28s} 95% CI {r.ci_relative.low:+.2%} to {r.ci_relative.high:+.2%} relative"
-            )
+            if r.relative_effect is not None:
+                out.append(
+                    f"  {'':<28s} 95% CI {r.ci_relative.low:+.2%} to "
+                    f"{r.ci_relative.high:+.2%} relative"
+                )
         if self.gate.warnings:
             out.append("")
             for w in self.gate.warnings:
@@ -125,10 +129,14 @@ class Readout:
         out += ["", "Guardrails", "-" * 72]
         for r in self.guardrails():
             out.append(
-                f"  {r.horizon_label:<28s} {r.control_value:>9.3f} -> {r.treatment_value:>9.3f}"
-                f"  {r.relative_effect:+8.2%}  p={r.p_value:.4f}"
+                f"  {r.horizon_label:<28s} {r.control_value:>9.4f} -> {r.treatment_value:>9.4f}"
+                f"  {r.relative_text:>10s}  p={r.p_value:.4f}"
             )
-        out += ["", "Horizon contrast", "-" * 72, "  " + self.headline()]
+        contrast = self.headline()
+        if contrast:
+            out += ["", "Horizon contrast", "-" * 72, "  " + contrast]
+        if self.config.has_covariates():
+            out += ["", render_segments(self.segments)]
         return "\n".join(out)
 
 
@@ -197,6 +205,7 @@ def build_readout(
     config_path: str = "config/<experiment>.yaml",
     resamples: int = 10_000,
     peeking: bool = True,
+    segments: bool = True,
     synthetic_units: bool = False,
 ) -> Readout:
     """Diagnose, gate, and estimate only if permitted. Assumes the contract is loaded."""
@@ -205,7 +214,7 @@ def build_readout(
 
     if not gate.estimates_permitted:
         return Readout(config=config, config_path=config_path, load_report=load_report,
-                       gate=gate, power=None, results=None, peeking=None)
+                       gate=gate, power=None, results=None, peeking=None, segments=None)
 
     results = compute_metrics(con, config, resamples=resamples)
     power = _horizon_power(con, config)
@@ -219,7 +228,8 @@ def build_readout(
         if peeking and decision_power else None
     )
     return Readout(config=config, config_path=config_path, load_report=load_report,
-                   gate=gate, power=power, results=results, peeking=peeking_result)
+                   gate=gate, power=power, results=results, peeking=peeking_result,
+                   segments=run_segments(con, config) if segments else None)
 
 
 def run_experiment(
@@ -228,6 +238,7 @@ def run_experiment(
     database: str | Path = ":memory:",
     resamples: int = 10_000,
     peeking: bool = True,
+    segments: bool = True,
 ) -> Readout:
     """Full pipeline from a config path — the one-command entry point (SPEC.md §7.10)."""
     config = load_config(config_path)
@@ -236,7 +247,7 @@ def run_experiment(
     report = load(con, adapter, config)
     return build_readout(
         con, config, load_report=report, config_path=str(config_path),
-        resamples=resamples, peeking=peeking,
+        resamples=resamples, peeking=peeking, segments=segments,
         synthetic_units=getattr(adapter, "synthesises_unit_ids", False),
     )
 

@@ -18,6 +18,7 @@ import argparse
 import sys
 from pathlib import Path
 
+from .html import render_html
 from .memo import render_memo
 from .run import run_experiment
 from .scorecard import render_scorecard
@@ -32,6 +33,8 @@ def _add_common(parser: argparse.ArgumentParser) -> None:
                         help="bootstrap resamples (default: 10,000, per SPEC.md §7.5)")
     parser.add_argument("--no-peeking", action="store_true",
                         help="skip the peeking simulation")
+    parser.add_argument("--no-segments", action="store_true",
+                        help="skip segmentation and CUPED (both are slow at 14M rows)")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -43,10 +46,11 @@ def main(argv: list[str] | None = None) -> int:
         ("memo", "generate the decision memo (markdown)"),
         ("scorecard", "dense side-by-side scorecard"),
         ("diagnose", "validity diagnostics only — never computes an effect"),
+        ("html", "self-contained HTML scorecard"),
     ):
         p = sub.add_parser(name, help=help_text)
         _add_common(p)
-        if name == "memo":
+        if name in ("memo", "html"):
             p.add_argument("--out", type=Path, help="write here instead of stdout")
 
     args = parser.parse_args(argv)
@@ -56,6 +60,7 @@ def main(argv: list[str] | None = None) -> int:
         database=args.database,
         resamples=args.resamples,
         peeking=not args.no_peeking,
+        segments=not args.no_segments,
     )
 
     if args.command == "diagnose":
@@ -66,8 +71,8 @@ def main(argv: list[str] | None = None) -> int:
         print(readout.render_cli())
     elif args.command == "scorecard":
         print(render_scorecard(readout))
-    elif args.command == "memo":
-        text = render_memo(readout)
+    elif args.command in ("memo", "html"):
+        text = render_memo(readout) if args.command == "memo" else render_html(readout)
         if args.out:
             args.out.write_text(text)
             print(f"wrote {args.out} ({len(text.splitlines()):,} lines)", file=sys.stderr)

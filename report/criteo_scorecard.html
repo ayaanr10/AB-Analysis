@@ -1,0 +1,61 @@
+<!doctype html><html lang='en'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>Scorecard &mdash; criteo_uplift</title><style>
+:root {
+  --bg:#fbfbfa; --fg:#1a1a19; --muted:#6b6b68; --line:#e2e2de; --card:#fff;
+  --pass:#2d7a4f; --warn:#a86a12; --block:#b3261e; --na:#8a8a86; --accent:#1f4e79;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg:#161614; --fg:#eeeeea; --muted:#a3a39e; --line:#33332f; --card:#1f1f1c;
+          --pass:#6ec18f; --warn:#e0a94a; --block:#f2857c; --na:#8a8a86; --accent:#8ab6e0; }
+}
+* { box-sizing:border-box; }
+body { margin:0; padding:2rem 1.25rem 4rem; background:var(--bg); color:var(--fg);
+  font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,sans-serif; }
+main { max-width:60rem; margin:0 auto; }
+h1 { font-size:1.5rem; margin:0 0 .25rem; letter-spacing:-.01em; }
+h2 { font-size:.78rem; text-transform:uppercase; letter-spacing:.09em; color:var(--muted);
+  margin:2.25rem 0 .7rem; font-weight:600; }
+.sub { color:var(--muted); margin:0 0 1.75rem; }
+.card { background:var(--card); border:1px solid var(--line); border-radius:9px;
+  padding:1.1rem 1.25rem; margin-bottom:.7rem; }
+.verdict { border-left:5px solid var(--accent); }
+.verdict.blocked { border-left-color:var(--block); }
+.verdict h1 { color:var(--accent); }
+.verdict.blocked h1 { color:var(--block); }
+table { width:100%; border-collapse:collapse; font-variant-numeric:tabular-nums; }
+th,td { text-align:right; padding:.5rem .6rem; border-bottom:1px solid var(--line); }
+th:first-child, td:first-child { text-align:left; }
+th { font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; color:var(--muted);
+  font-weight:600; }
+tbody tr:last-child td { border-bottom:none; }
+.scroll { overflow-x:auto; }
+.tag { display:inline-block; font-size:.68rem; font-weight:700; letter-spacing:.05em;
+  padding:.16rem .45rem; border-radius:4px; border:1px solid currentColor; }
+.pass{color:var(--pass)} .warn{color:var(--warn)} .block{color:var(--block)} .na{color:var(--na)}
+.diag { display:grid; grid-template-columns:auto 1fr; gap:.5rem .9rem; align-items:baseline; }
+.diag .txt { color:var(--muted); font-size:.9rem; }
+.banner { border-left:4px solid var(--warn); background:color-mix(in srgb,var(--warn) 8%,transparent);
+  padding:.8rem 1rem; border-radius:0 7px 7px 0; margin-bottom:.7rem; font-size:.92rem; }
+.sig { color:var(--pass); font-weight:600; }
+.nosig { color:var(--muted); }
+.controls { display:flex; gap:.4rem; flex-wrap:wrap; margin-bottom:.7rem; }
+.controls button { font:inherit; font-size:.85rem; padding:.35rem .8rem; cursor:pointer;
+  background:var(--card); color:var(--fg); border:1px solid var(--line); border-radius:6px; }
+.controls button[aria-pressed="true"] { border-color:var(--accent); color:var(--accent);
+  font-weight:600; }
+footer { color:var(--muted); font-size:.82rem; margin-top:2.5rem; padding-top:1rem;
+  border-top:1px solid var(--line); }
+code { font-size:.85em; background:color-mix(in srgb,var(--fg) 7%,transparent);
+  padding:.1rem .3rem; border-radius:3px; }
+</style></head><body><main><section class="card verdict"><h1>Ship it</h1><p class="sub">A large-scale advertising incrementality test: 13,979,592 users randomised into a treated arm that could receive advertising and a holdout that could not. Outcomes are site visits and conversions.</p><p>At visit rate (campaign period), the change improved the metric by +27.07% (p = 0.0000), and no guardrail moved against it (2 checked).</p></section><h2>Validity diagnostics</h2><div class="card"><div class="diag"><span class="tag na">n/a</span><span><strong>Sample ratio mismatch</strong><br><span class="txt">observed holdout 15.00%, treated 85.00%; intended ratio is inferred, not published</span></span><span class="tag na">n/a</span><span><strong>Duplicate assignments</strong><br><span class="txt">unit ids are synthesised from row position; duplicates are impossible</span></span><span class="tag na">n/a</span><span><strong>Cross-contamination</strong><br><span class="txt">unit ids are synthesised; a unit cannot span two arms by construction</span></span><span class="tag pass">PASS</span><span><strong>Orphan events</strong><br><span class="txt">every event belongs to an assigned unit</span></span><span class="tag na">n/a</span><span><strong>Zero-activity units</strong><br><span class="txt">every event type in this dataset is an outcome being measured</span></span><span class="tag pass">PASS</span><span><strong>Pre-period balance</strong><br><span class="txt">worst |SMD| = 0.0488 across 12 covariate(s)</span></span></div></div><h2>Power &mdash; shown before results</h2><div class='card scroll'><table><thead><tr><th>Horizon</th><th>Baseline</th><th>Smallest detectable effect</th><th>Worth acting on</th><th>Powered for that?</th></tr></thead><tbody><tr><td>Visit rate (campaign period)</td><td>3.82%</td><td>1.05% rel (+0.040% abs)</td><td>1.0%</td><td><span class="block">no</span></td></tr></tbody></table></div><h2>Results</h2><div class="controls"><button data-horizon-filter="*" aria-pressed="true">All horizons</button><button data-horizon-filter="Visit rate (campaign period)" aria-pressed="false">Visit rate (campaign period)</button><button data-horizon-filter="Conversion rate (campaign period)" aria-pressed="false">Conversion rate (campaign period)</button><button data-horizon-filter="Share actually served an ad" aria-pressed="false">Share actually served an ad</button></div><div class="card scroll"><table><thead><tr><th>Metric</th><th>Control</th><th>Treatment</th><th>Effect</th><th>95% CI (relative)</th><th>p</th><th>Readable?</th></tr></thead><tbody><tr data-horizon="Visit rate (campaign period)"><td>Site visit rate<br><span class='txt'>Visit rate (campaign period)</span></td><td>3.8201%</td><td>4.8543%</td><td>+27.07%</td><td>+26.16% to +28.00%</td><td>0.0000</td><td><span class="sig">yes</span></td></tr><tr data-horizon="Conversion rate (campaign period)"><td>Conversion rate <span class="txt">(guardrail)</span><br><span class='txt'>Conversion rate (campaign period)</span></td><td>0.1938%</td><td>0.3089%</td><td>+59.45%</td><td>+54.47% to +64.75%</td><td>0.0000</td><td><span class="sig">yes</span></td></tr><tr data-horizon="Share actually served an ad"><td>Exposure rate <span class="txt">(guardrail)</span><br><span class='txt'>Share actually served an ad</span></td><td>0.0000%</td><td>3.6037%</td><td>undefined (control rate is 0)</td><td>&mdash;</td><td>0.0000</td><td><span class="sig">yes</span></td></tr></tbody></table></div><h2>Segmentation and CUPED</h2><div class="card"><span class="txt">48 segment comparisons across 12 pre-treatment covariates. 47 reached p &lt; 0.05, where noise alone would produce about 2. <strong>47</strong> survive Benjamini-Hochberg correction.</span></div><div class="card scroll"><table><thead><tr><th>CUPED on f9</th><th>Before</th><th>After</th></tr></thead><tbody><tr><td>Standard error</td><td>0.000146</td><td>0.000129</td></tr><tr><td>95% CI width</td><td>0.000574</td><td>0.000505</td></tr><tr><td>Effect estimate</td><td>+0.010342</td><td>+0.007859</td></tr></tbody></table><p class="txt">Variance reduction 22.33% against a theoretical ceiling of 24.53% (corr = +0.4953). The effect estimate moved from +0.010342 to +0.007859, which is 24% of it. That is a correction, not an error: the arms differ slightly on f9, which predicts the outcome, so part of the raw effect was never the treatment. The shift equals &minus;theta &times; the covariate imbalance exactly. The adjusted figure is the better estimate, and the gap is information about the randomisation rather than a problem with the adjustment.</p></div><footer>Generated by <code>readout.cli html --config config/criteo.yaml</code> on 2026-07-28 from 13,979,592 assignments and 1,125,915 events. Every value on this page comes from the same pipeline that produced the decision memo.</footer></main><script>
+document.querySelectorAll('[data-horizon-filter]').forEach(function (btn) {
+  btn.addEventListener('click', function () {
+    var want = btn.getAttribute('data-horizon-filter');
+    document.querySelectorAll('[data-horizon-filter]').forEach(function (b) {
+      b.setAttribute('aria-pressed', String(b === btn));
+    });
+    document.querySelectorAll('tr[data-horizon]').forEach(function (row) {
+      row.hidden = want !== '*' && row.getAttribute('data-horizon') !== want;
+    });
+  });
+});
+</script></body></html>

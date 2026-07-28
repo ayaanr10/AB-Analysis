@@ -24,6 +24,13 @@ DO_NOT_SHIP = "Do not ship"
 INCONCLUSIVE = "Do not ship yet — the experiment cannot answer this"
 
 
+def _ci_text(r) -> str:
+    """A relative CI is only meaningful when the relative effect is."""
+    if r.relative_effect is None:
+        return "n/a"
+    return f"{r.ci_relative.low:+.2%} to {r.ci_relative.high:+.2%}"
+
+
 def _pp(x: float) -> str:
     """Format a difference between two rates as percentage points.
 
@@ -42,17 +49,35 @@ def decide(readout) -> tuple[str, str]:
     helpful = [r for r in primary if r.is_significant and not r.moved_against_treatment]
 
     if harmful:
-        worst = min(harmful, key=lambda r: r.relative_effect)
+        worst = min(harmful, key=lambda r: r.relative_effect if r.relative_effect is not None
+                    else r.absolute_effect)
         return DO_NOT_SHIP, (
             f"At {worst.horizon_label.lower()}, the change made things worse by "
-            f"{abs(worst.relative_effect):.1%} — a difference too large and too consistent to be "
+            f"{abs(worst.relative_effect):.1%}, a difference too large and too consistent to be "
             f"chance (p = {worst.p_value:.4f})."
+            if worst.relative_effect is not None else
+            f"At {worst.horizon_label.lower()}, the change moved the metric the wrong way by "
+            f"{_pp(worst.absolute_effect)} (p = {worst.p_value:.4f})."
         )
     if helpful and longest.is_significant:
+        # Only claim the guardrails are clean after checking them. The earlier version
+        # asserted "no guardrail moved against it" unconditionally, which is exactly the
+        # kind of sentence that is true until one day it silently isn't.
+        breached = [g for g in readout.guardrails()
+                    if g.is_significant and g.moved_against_treatment]
+        if breached:
+            worst = breached[0]
+            return SHIP + ", but check the guardrail first", (
+                f"At {longest.horizon_label.lower()} the change improved the primary metric by "
+                f"{longest.relative_text} (p = {longest.p_value:.4f}). However "
+                f"{worst.metric_label.lower()} moved against it by {worst.relative_text} "
+                f"(p = {worst.p_value:.4f}), which needs a decision about whether that "
+                "trade is acceptable before this ships."
+            )
         return SHIP, (
             f"At {longest.horizon_label.lower()}, the change improved the metric by "
-            f"{longest.relative_effect:.1%} (p = {longest.p_value:.4f}), and no guardrail moved "
-            "against it."
+            f"{longest.relative_text} (p = {longest.p_value:.4f}), and no guardrail moved "
+            f"against it ({len(readout.guardrails())} checked)."
         )
     underpowered = [hp for hp in (readout.power or ())
                     if hp.result.can_answer_its_own_question is False]
@@ -116,7 +141,7 @@ def _results_table(rows: tuple[HorizonResult, ...], as_rate: bool) -> list[str]:
         readable = "yes" if r.is_significant else "**no — inside noise**"
         out.append(
             f"| {r.horizon_label} | {fmt(r.control_value)} | {fmt(r.treatment_value)} "
-            f"| {r.relative_effect:+.2%} | {r.ci_relative.low:+.2%} to {r.ci_relative.high:+.2%} "
+            f"| {r.relative_text} | {_ci_text(r)} "
             f"| {r.p_value:.4f} | {readable} |"
         )
     return out
@@ -314,14 +339,21 @@ def _how_this_was_built(readout) -> list[str]:
         "methodological grounds and the reasoning is written down, rather than the analysis "
         "being quietly omitted.",
         "",
-        "**Status.** Phases 0–4 are complete: the system runs end to end on Cookie Cats and "
-        "everything above is generated from it. A second case study — the 13.9M-row Criteo "
-        "uplift experiment, which is the one with genuine pre-treatment covariates and "
-        "therefore the one that can carry segmentation and CUPED — is selected and specified "
-        "but **not yet run**. The claim that the contract generalises unchanged is not proven "
-        "until it does, and this README will not make it before then. "
-        "[`docs/dataset_selection.md`](docs/dataset_selection.md) records how that dataset was "
-        "chosen and why three others were rejected on methodological grounds.",
+        "**It has been run on a second experiment.** The Criteo uplift dataset, 13,979,592 "
+        "users, went through the contract with no change to any file in `sql/`, `analysis/` or "
+        "`readout/` — one new adapter and one new config, which is what the design says should "
+        "be all that is needed. Same command, different config:",
+        "",
+        "```bash",
+        "python -m readout.cli readout --config config/criteo.yaml --database criteo.duckdb",
+        "```",
+        "",
+        "That case study is where segmentation and CUPED live, since Cookie Cats has no "
+        "covariates to support them. It also produced the most useful finding in the repo: a "
+        "covariate that passed the balance check at |SMD| = 0.024 had still inflated the "
+        "headline effect by a quarter of its size, which CUPED corrected. Full write-up in "
+        "[`docs/case_study_2.md`](docs/case_study_2.md); the dataset evaluation and the three "
+        "rejections are in [`docs/dataset_selection.md`](docs/dataset_selection.md).",
     ]
 
 
@@ -338,6 +370,8 @@ def _power_commentary(readout, power) -> list[str]:
     for hp in power:
         r = results.get(hp.horizon_name)
         if r is None:
+            continue
+        if r.relative_effect is None:
             continue
         observed, mde = abs(r.relative_effect), hp.result.mde_relative
         if r.is_significant:

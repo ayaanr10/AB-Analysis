@@ -168,6 +168,7 @@ def test_differential_zero_activity_warns(tmp_path):
 
 def test_block_suppresses_estimates_in_every_surface(tmp_path):
     """The core claim. A blocked readout renders the failure and no numbers, everywhere."""
+    from readout.html import render_html
     from readout.memo import render_memo
     from readout.scorecard import render_scorecard
 
@@ -183,6 +184,7 @@ def test_block_suppresses_estimates_in_every_surface(tmp_path):
     for surface, text in (
         ("memo", render_memo(readout)),
         ("scorecard", render_scorecard(readout)),
+        ("html", render_html(readout)),
         ("cli", readout.render_cli()),
     ):
         assert "BLOCK" in text, f"{surface} must state that it blocked"
